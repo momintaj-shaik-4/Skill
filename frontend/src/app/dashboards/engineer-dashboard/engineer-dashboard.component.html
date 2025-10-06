@@ -92,17 +92,99 @@
     </aside>
 
     <div class="flex-1 flex flex-col">
-        <header class="flex justify-between items-center bg-white/80 backdrop-blur-sm px-8 py-3 border-b border-slate-200/60 sticky top-0 z-10">
-            <div class="flex items-center gap-4">
-                <h1 class="text-xl font-bold text-slate-800">Engineer Competency Dashboard</h1>
+     <header class="flex justify-between items-center bg-slate-900 px-8 py-3 border-b border-slate-700/50 sticky top-0 z-10">
+    <div class="flex items-center gap-4">
+        <h1 class="text-xl font-bold text-white">Engineer Competency Dashboard</h1>
+    </div>
+    <div class="flex items-center gap-6">
+        <span class="text-slate-300 text-sm">Welcome, <span class="font-bold text-white">{{ employeeName }}</span> ({{ employeeId }})</span>
+        <button (click)="logout()" class="bg-slate-700 text-white px-4 py-2 rounded-full font-semibold hover:bg-slate-600 transition-colors duration-200 shadow-sm text-sm">
+            <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+        </button>
+    </div>
+</header>
+
+<div *ngIf="activeTab === 'mySkills' || activeTab === 'trainingCatalog' || activeTab === 'assignedTrainings'" class="bg-sky-50 border-b border-sky-200 px-6 py-3 shadow-sm z-[9]">
+    <div *ngIf="activeTab === 'mySkills'" @fadeIn>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-slate-800">
+                <i class="fa-solid fa-filter text-sky-500 text-sm"></i>
+                <h3 class="text-sm font-semibold">Filter Skills</h3>
             </div>
-            <div class="flex items-center gap-6">
-                <span class="text-slate-600 text-sm">Welcome, <span class="font-bold text-slate-900">{{ employeeName }}</span> ({{ employeeId }})</span>
-                <button (click)="logout()" class="bg-slate-700 text-white px-4 py-2 rounded-full font-semibold hover:bg-slate-800 transition-colors duration-200 shadow-sm text-sm">
-                    <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+            <div class="flex flex-wrap items-center gap-1.5">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" [(ngModel)]="skillSearch" placeholder="Search..." class="w-full sm:w-36 pl-8 pr-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white transition-all duration-300 focus:w-48 text-sm">
+                </div>
+                <select [(ngModel)]="skillNameFilter" class="w-full sm:w-auto appearance-none px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-sm">
+                    <option value="">All Skills</option>
+                    <option *ngFor="let name of skillNames" [value]="name">{{ name }}</option>
+                </select>
+                <select [(ngModel)]="skillStatusFilter" class="w-full sm:w-auto appearance-none px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-sm">
+                    <option value="">All Statuses</option>
+                    <option value="Met">Met</option>
+                    <option value="Gap">Gap</option>
+                    <option value="Error">Error</option>
+                </select>
+                <button (click)="resetSkillFilters()" title="Reset Filters" class="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-md transition-colors">
+                    <i class="fa-solid fa-rotate-right"></i>
                 </button>
             </div>
-        </header>
+        </div>
+    </div>
+    <div *ngIf="activeTab === 'trainingCatalog'" @fadeIn>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-slate-800">
+                <i class="fa-solid fa-filter text-sky-500 text-sm"></i>
+                <h3 class="text-sm font-semibold">Filter Trainings</h3>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" [(ngModel)]="trainingSearch" placeholder="Search..." class="w-full sm:w-36 pl-8 pr-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white transition-all duration-300 focus:w-48 text-sm">
+                </div>
+                <select [(ngModel)]="trainingSkillFilter" class="w-full sm:w-auto appearance-none px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-sm">
+                    <option value="All">All Skills</option>
+                    <option *ngFor="let name of skillNames" [value]="name">{{ name }}</option>
+                </select>
+                <select [(ngModel)]="trainingLevelFilter" class="w-full sm:w-auto appearance-none px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-sm">
+                    <option value="All">All Levels</option>
+                    <option *ngFor="let level of skillCategoryLevels" [value]="level">{{ level }}</option>
+                </select>
+                <input type="date" [(ngModel)]="trainingDateFilter" class="w-full sm:w-auto px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white text-sm">
+                <button (click)="resetTrainingFilters()" title="Reset Filters" class="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-md transition-colors">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div *ngIf="activeTab === 'assignedTrainings'" @fadeIn>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-slate-800">
+                <i class="fa-solid fa-filter text-sky-500 text-sm"></i>
+                <h3 class="text-sm font-semibold">Filter Trainings</h3>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" [(ngModel)]="assignedSearch" placeholder="Search..." class="w-full sm:w-36 pl-8 pr-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white transition-all duration-300 focus:w-48 text-sm">
+                </div>
+                <select [(ngModel)]="assignedSkillFilter" class="w-full sm:w-auto appearance-none px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-sm">
+                    <option value="All">All Skills</option>
+                    <option *ngFor="let name of skillNames" [value]="name">{{ name }}</option>
+                </select>
+                <select [(ngModel)]="assignedLevelFilter" class="w-full sm:w-auto appearance-none px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-sm">
+                    <option value="All">All Levels</option>
+                    <option *ngFor="let level of skillCategoryLevels" [value]="level">{{ level }}</option>
+                </select>
+                <input type="date" [(ngModel)]="assignedDateFilter" class="w-full sm:w-auto px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white text-sm">
+                <button (click)="resetAssignedTrainingFilters()" title="Reset Filters" class="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-md transition-colors">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
         <main class="flex-1 p-6 overflow-y-auto bg-gradient-to-br from-sky-100 to-cyan-500">
@@ -132,7 +214,7 @@
                       <div class="flex items-center gap-2">
                          <button (click)="openSkillsModal('all')" class="bg-white/10 px-3 py-1.5 rounded-lg text-center ring-1 ring-white/15 transition-colors duration-200 hover:bg-white/20 flex items-center gap-2">
                               <span class="text-xl font-bold">{{ totalSkills }}</span>
-                              <span class="text-[11px] text-slate-200 leading-tight">Total<br>Skills</span>
+                              <span class="text-[11px] text-slate-200 leading-tight">Core<br>Skills</span>
                          </button>
                          <button (click)="openSkillsModal('Met')" class="bg-white/10 px-3 py-1.5 rounded-lg text-center ring-1 ring-white/15 transition-colors duration-200 hover:bg-white/20 flex items-center gap-2">
                                <span class="text-xl font-bold">{{ skillsMet }}</span>
@@ -141,11 +223,11 @@
                       </div>
                  </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-4">
-                        <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4">
-                            <h3 class="text-base font-bold text-slate-900 mb-2">Core Technical Skills</h3>
-                            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" [@listStagger]="sections.length">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4 space-y-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900 mb-2">Core Skills</h3>
+                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2" [@listStagger]="sections.length">
                                 <div *ngFor="let section of sections" class="group flex flex-col items-center p-1.5 bg-slate-50/70 hover:bg-white rounded-xl transition-all duration-300 text-center border-2 border-transparent hover:border-sky-400 hover:shadow-md">
                                     <div class="w-8 h-8 mb-1 rounded-full flex items-center justify-center bg-gradient-to-br from-sky-100 to-sky-50 group-hover:scale-110 transition-transform">
                                         <i [ngClass]="getTrainingCardIcon(section.title)" class="text-sky-600"></i>
@@ -154,58 +236,42 @@
                                 </div>
                             </div>
                         </div>
-                        <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4">
-                            <h3 class="text-base font-bold text-slate-900 mb-2">Quick Actions</h3>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button (click)="selectTab('mySkills')" class="group flex items-center p-2 bg-slate-50/70 hover:bg-white rounded-xl transition-all duration-300 border-2 border-transparent hover:border-sky-400 hover:shadow-md">
-                                    <div class="w-8 h-8 mr-2 rounded-lg flex items-center justify-center bg-gradient-to-br from-sky-100 to-sky-50"><i class="fa-solid fa-list-check text-sky-600"></i></div>
-                                    <div><div class="font-bold text-slate-900 text-left text-xs">My Skills</div></div>
-                                </button>
-                                <button (click)="selectTab('trainingCatalog')" class="group flex items-center p-2 bg-slate-50/70 hover:bg-white rounded-xl transition-all duration-300 border-2 border-transparent hover:border-sky-400 hover:shadow-md">
-                                    <div class="w-8 h-8 mr-2 rounded-lg flex items-center justify-center bg-gradient-to-br from-sky-100 to-sky-50"><i class="fa-solid fa-book-open text-sky-600"></i></div>
-                                    <div><div class="font-bold text-slate-900 text-left text-xs">Catalog</div></div>
-                                </button>
-                                <button (click)="selectTab('levels')" class="group flex items-center p-2 bg-slate-50/70 hover:bg-white rounded-xl transition-all duration-300 border-2 border-transparent hover:border-sky-400 hover:shadow-md">
-                                    <div class="w-8 h-8 mr-2 rounded-lg flex items-center justify-center bg-gradient-to-br from-sky-100 to-sky-50"><i class="fa-solid fa-layer-group text-sky-600"></i></div>
-                                    <div><div class="font-bold text-slate-900 text-left text-xs">Levels</div></div>
-                                </button>
-                                <button (click)="selectTab('myBadges')" class="group flex items-center p-2 bg-slate-50/70 hover:bg-white rounded-xl transition-all duration-300 border-2 border-transparent hover:border-sky-400 hover:shadow-md">
-                                    <div class="w-8 h-8 mr-2 rounded-lg flex items-center justify-center bg-gradient-to-br from-sky-100 to-sky-50"><i class="fa-solid fa-award text-sky-600"></i></div>
-                                    <div><div class="font-bold text-slate-900 text-left text-xs">My Badges</div></div>
-                                </button>
+                        <div class="border-t border-slate-200/80"></div>
+                        <div class="flex flex-col sm:flex-row items-center gap-4">
+                            <div class="relative w-24 h-24 flex-shrink-0">
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                                    <circle cx="60" cy="60" r="54" stroke-width="10" fill="none" class="stroke-slate-200/70" />
+                                    <circle cx="60" cy="60" r="54" stroke-width="10" fill="none" [attr.stroke]="progressPercentage >= 100 ? '#10b981' : '#0ea5e9'" [attr.stroke-dasharray]="339.29" [attr.stroke-dashoffset]="339.29 - (339.29 * progressPercentage / 100)" class="transition-all duration-1000 ease-out" stroke-linecap="round"></circle>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center"><div class="text-xl font-extrabold text-slate-900">{{ progressPercentage }}%</div><p class="text-[10px] text-slate-500 font-medium">Complete</p></div>
+                                </div>
+                            </div>
+                            <div class="w-full">
+                                <h3 class="text-base font-bold text-slate-900 mb-1 text-center sm:text-left">Overall Progress</h3>
+                                <p class="text-sm text-slate-600 text-center sm:text-left">You have met <span class="font-bold text-slate-800">{{ skillsMet }}</span> out of <span class="font-bold text-slate-800">{{ totalSkills }}</span> core skills.</p>
                             </div>
                         </div>
                     </div>
+
                     <div class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div @bouncyScale class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4 flex flex-col items-center text-center">
-                                <h3 class="text-base font-bold text-slate-900 mb-1">Overall Progress</h3>
-                                <div class="relative w-24 h-24 my-1">
-                                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
-                                        <circle cx="60" cy="60" r="54" stroke-width="10" fill="none" class="stroke-slate-200/70" />
-                                        <circle cx="60" cy="60" r="54" stroke-width="10" fill="none" [attr.stroke]="progressPercentage >= 100 ? '#10b981' : '#0ea5e9'" [attr.stroke-dasharray]="339.29" [attr.stroke-dashoffset]="339.29 - (339.29 * progressPercentage / 100)" class="transition-all duration-1000 ease-out" stroke-linecap="round"></circle>
-                                    </svg>
-                                    <div class="absolute inset-0 flex items-center justify-center">
-                                        <div class="text-center"><div class="text-xl font-extrabold text-slate-900">{{ progressPercentage }}%</div><p class="text-[10px] text-slate-500 font-medium">Complete</p></div>
-                                    </div>
+                        <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4">
+                            <h3 class="text-base font-bold text-slate-900 mb-3">Training Overview</h3>
+                            <div class="grid grid-cols-3 gap-3 text-center">
+                                <div>
+                                    <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-1"><i class="fa-solid fa-book-open text-emerald-600"></i></div>
+                                    <div class="font-bold text-xl text-slate-900">{{ allTrainings.length }}</div>
+                                    <div class="text-xs text-slate-500 font-medium">In Catalog</div>
                                 </div>
-                                <div class="w-full text-xs">
-                                    <div class="flex justify-between items-center mb-1 font-medium"><span class="text-slate-900">Progress</span><span class="text-slate-500">{{ skillsMet }} of {{ totalSkills }} skills</span></div>
-                                    <div class="bg-slate-200/70 h-2 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all duration-500 ease-out" [ngClass]="getProgressBarClass()" [style.width.%]="progressPercentage"></div></div>
+                                <div>
+                                    <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mx-auto mb-1"><i class="fa-solid fa-paperclip text-amber-600"></i></div>
+                                    <div class="font-bold text-xl text-slate-900">{{ assignedTrainings.length }}</div>
+                                    <div class="text-xs text-slate-500 font-medium">Assigned</div>
                                 </div>
-                            </div>
-                            <div class="grid grid-rows-3 gap-4">
-                                <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-3 flex items-center space-x-3">
-                                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-users text-green-600 text-lg"></i></div>
-                                    <div><div class="font-semibold text-slate-900 text-sm">Soft Skills</div><div class="font-bold text-lg text-slate-900">{{ getSoftSkillsCount() }}</div></div>
-                                </div>
-                                <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-3 flex items-center space-x-3">
-                                    <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-crown text-violet-600 text-lg"></i></div>
-                                    <div><div class="font-semibold text-slate-900 text-sm">Leadership</div><div class="font-bold text-lg text-slate-900">{{ getLeadershipSkillsCount() }}</div></div>
-                                </div>
-                                <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-3 flex items-center space-x-3">
-                                    <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-calendar-days text-amber-600 text-lg"></i></div>
-                                    <div><div class="font-semibold text-slate-900 text-sm">Trainings</div><div class="font-bold text-lg text-slate-900">{{ dashboardUpcomingTrainings.length }}</div></div>
+                                <div>
+                                    <div class="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center mx-auto mb-1"><i class="fa-solid fa-calendar-days text-sky-600"></i></div>
+                                    <div class="font-bold text-xl text-slate-900">{{ dashboardUpcomingTrainings.length }}</div>
+                                    <div class="text-xs text-slate-500 font-medium">Upcoming</div>
                                 </div>
                             </div>
                         </div>
@@ -227,6 +293,26 @@
                             </ng-template>
                         </div>
                     </div>
+                    
+                    <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4">
+                        <h3 class="text-base font-bold text-slate-900 mb-2">Additional Skills Portfolio</h3>
+                        <div *ngIf="additionalSkills.length > 0; else noAdditionalSkills" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[190px] overflow-y-auto pr-1" [@listStagger]="additionalSkills.length">
+                            <div *ngFor="let skill of additionalSkills" class="group flex flex-col items-center p-1.5 bg-slate-50/70 hover:bg-white rounded-xl transition-all duration-300 text-center border-2 border-transparent hover:border-sky-400 hover:shadow-md">
+                                <div class="w-8 h-8 mb-1 rounded-full flex items-center justify-center bg-gradient-to-br from-amber-100 to-amber-50 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-star text-amber-600"></i>
+                                </div>
+                                <div class="font-semibold text-slate-800 text-[11px] leading-tight">{{ skill.skill_name }}</div>
+                            </div>
+                        </div>
+                        <ng-template #noAdditionalSkills>
+                            <div class="text-center py-10 text-slate-500 text-sm">
+                                <div class="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                    <i class="fa-solid fa-plus text-slate-400"></i>
+                                </div>
+                                No additional skills added yet.
+                            </div>
+                        </ng-template>
+                    </div>
                 </div>
             </div>
 
@@ -234,86 +320,54 @@
                 <div *ngIf="activeTab === 'mySkills'" @slideFadeIn class="space-y-8">
                 <h2 class="text-3xl font-bold text-slate-800">My Skills and Competencies</h2>
 
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4">
-                    <div class="flex flex-wrap items-center justify-between gap-4">
-                        <div class="flex items-center gap-3 text-slate-800">
-                            <i class="fa-solid fa-filter text-sky-500"></i>
-                            <h3 class="text-md font-semibold">Filter Skills</h3>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <div class="relative">
-                                <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                <input type="text" [(ngModel)]="skillSearch" placeholder="Search..." class="w-full sm:w-40 pl-9 pr-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white/80 transition-all duration-300 focus:w-56">
-                            </div>
-                            <select [(ngModel)]="skillNameFilter" class="w-full sm:w-auto appearance-none px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer">
-                                <option value="">All Skills</option>
-                                <option *ngFor="let name of skillNames" [value]="name">{{ name }}</option>
-                            </select>
-                            <select [(ngModel)]="skillStatusFilter" class="w-full sm:w-auto appearance-none px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer">
-                                <option value="">All Statuses</option>
-                                <option value="Met">Met</option>
-                                <option value="Gap">Gap</option>
-                                <option value="Error">Error</option>
-                            </select>
-                            <button (click)="resetSkillFilters()" title="Reset Filters" class="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
-                                <i class="fa-solid fa-rotate-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" [@listStagger]="(getFilteredSkills() | skillFilter:skillSearch:skillStatusFilter).length">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" [@listStagger]="(getFilteredSkills() | skillFilter:skillSearch:skillStatusFilter).length">
                     <div *ngFor="let competency of getFilteredSkills() | skillFilter:skillSearch:skillStatusFilter"
-                        class="relative overflow-hidden bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200/60 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                        class="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                         [ngClass]="{
-                  'border-t-4 border-green-500': competency.status === 'Met',
-                  'border-t-4 border-orange-500': competency.status === 'Gap',
-                  'border-t-4 border-red-500': competency.status === 'Error'
-                }">
-                        <div class="flex flex-col justify-between h-full">
-                            <div class="flex items-start justify-between mb-4">
-                                <div class="flex items-center space-x-4">
-                                    <div
-                                        class="w-12 h-12 bg-sky-500 text-white rounded-lg flex items-center justify-center text-xl shadow-md">
-                                        <i class="fa-solid fa-graduation-cap"></i>
+                            'border-green-300/80': competency.status === 'Met',
+                            'border-orange-300/80': competency.status === 'Gap',
+                            'border-red-300/80': competency.status === 'Error'
+                        }">
+                        <div class="flex flex-col justify-between h-full space-y-3">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center text-lg flex-shrink-0">
+                                        <i [ngClass]="getTrainingCardIcon(competency.skill)"></i>
                                     </div>
                                     <div>
-                                        <h3 class="font-extrabold text-xl text-slate-900">{{ competency.skill }}</h3>
-                                        <span class="text-sm font-medium text-slate-500">{{ competency.competency || 'Skill' }}</span>
+                                        <h3 class="font-bold text-base text-slate-800 leading-tight">{{ competency.skill }}</h3>
+                                        <p class="text-xs text-slate-500">{{ competency.competency }}</p>
                                     </div>
                                 </div>
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider" [ngClass]="{
-                        'bg-green-100/70 text-green-800': competency.status === 'Met',
-                        'bg-orange-100/70 text-orange-800': competency.status === 'Gap',
-                        'bg-red-100/70 text-red-800': competency.status === 'Error'
-                      }">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ml-2 flex-shrink-0" [ngClass]="{
+                                    'bg-green-100 text-green-800': competency.status === 'Met',
+                                    'bg-orange-100 text-orange-800': competency.status === 'Gap',
+                                    'bg-red-100 text-red-800': competency.status === 'Error'
+                                    }">
                                     {{ competency.status }}
                                 </span>
                             </div>
-                            <div class="space-y-4">
-                                <div class="flex justify-between items-center text-sm">
-                                    <div class="flex items-center text-slate-600">
-                                        <i class="fa-solid fa-bullseye text-slate-400 mr-2 w-4 text-center"></i>Current: <span
-                                            class="ml-1.5 font-semibold text-slate-900">{{ competency.current_expertise }}</span>
-                                    </div>
-                                    <div class="flex items-center text-slate-600">
-                                        <i class="fa-solid fa-rocket text-slate-400 mr-2 w-4 text-center"></i>Target: <span
-                                            class="ml-1.5 font-semibold text-slate-900">{{ competency.target_expertise }}</span>
+                
+                            <div>
+                                <div class="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden shadow-inner mb-1.5">
+                                    <div class="h-full rounded-full transition-all duration-700" [ngClass]="{
+                                        'bg-gradient-to-r from-green-400 to-emerald-500': competency.status === 'Met',
+                                        'bg-gradient-to-r from-orange-400 to-amber-500': competency.status === 'Gap',
+                                        'bg-gradient-to-r from-red-400 to-rose-500': competency.status === 'Error'
+                                        }" [style.width.%]="getSkillProgress(competency)">
                                     </div>
                                 </div>
-                                <div class="w-full bg-slate-200/70 rounded-full h-3 overflow-hidden shadow-inner">
-                                    <div class="h-full rounded-full transition-all duration-700" [ngClass]="{
-                          'bg-gradient-to-r from-green-400 to-emerald-500': competency.status === 'Met',
-                          'bg-gradient-to-r from-orange-400 to-amber-500': competency.status === 'Gap',
-                          'bg-gradient-to-r from-red-400 to-rose-500': competency.status === 'Error'
-                        }" [style.width.%]="getSkillProgress(competency)">
-                                    </div>
+                                <div class="flex justify-between items-center text-xs text-slate-500 font-medium">
+                                    <span>Current: <span class="font-bold text-slate-700">{{ competency.current_expertise }}</span></span>
+                                    <span>Target: <span class="font-bold text-slate-700">{{ competency.target_expertise }}</span></span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
                 <p *ngIf="(skills | skillFilter:skillSearch:skillStatusFilter).length === 0"
-                    class="text-center text-slate-500 mt-8">No skills data available.</p>
+                    class="text-center text-slate-500 mt-8">No skills found matching your filters.</p>
 
 
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-8">
@@ -408,34 +462,7 @@
                         <h2 class="text-3xl font-bold text-slate-800">Training Catalog</h2>
                         <p class="text-slate-500 mt-1">Browse available training sessions to enhance your skills.</p>
                     </div>
-
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4">
-                        <div class="flex flex-wrap items-center justify-between gap-4">
-                            <div class="flex items-center gap-3 text-slate-800">
-                                <i class="fa-solid fa-filter text-sky-500"></i>
-                                <h3 class="text-md font-semibold">Filter Trainings</h3>
-                            </div>
-                            <div class="flex flex-wrap items-center gap-3">
-                                <div class="relative">
-                                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                    <input type="text" [(ngModel)]="trainingSearch" placeholder="Search..." class="w-full sm:w-40 pl-9 pr-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white/80 transition-all duration-300 focus:w-56">
-                                </div>
-                                <select [(ngModel)]="trainingSkillFilter" class="w-full sm:w-auto appearance-none px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer">
-                                    <option value="All">All Skills</option>
-                                    <option *ngFor="let name of skillNames" [value]="name">{{ name }}</option>
-                                </select>
-                                <select [(ngModel)]="trainingLevelFilter" class="w-full sm:w-auto appearance-none px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer">
-                                    <option value="All">All Levels</option>
-                                    <option *ngFor="let level of skillCategoryLevels" [value]="level">{{ level }}</option>
-                                </select>
-                                <input type="date" [(ngModel)]="trainingDateFilter" class="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white">
-                                <button (click)="resetTrainingFilters()" title="Reset Filters" class="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
-                                    <i class="fa-solid fa-rotate-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
+                                        
                     <div class="flex justify-end -mb-2">
                         <div class="inline-flex rounded-lg shadow-sm bg-slate-200/70 p-1">
                             <button (click)="setTrainingCatalogView('list')" class="px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200" [ngClass]="{'bg-white text-sky-600 shadow': trainingCatalogView === 'list', 'text-slate-600 hover:bg-slate-300/50': trainingCatalogView !== 'list'}">
@@ -457,29 +484,29 @@
                             <p class="text-slate-600 max-w-md mx-auto">No training sessions match your current filters. Try resetting the filters.</p>
                         </div>
 
-                        <div *ngIf="filteredTrainings.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" [@listStagger]="filteredTrainings.length">
+                        <div *ngIf="filteredTrainings.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" [@listStagger]="filteredTrainings.length">
                             <div *ngFor="let training of filteredTrainings"
                                 class="group bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden transform hover:-translate-y-1.5 transition-all duration-300 ease-in-out hover:shadow-2xl flex flex-col">
                                 <div class="h-2 bg-gradient-to-r from-sky-500 to-cyan-400"></div>
-                                <div class="p-6 flex-grow flex flex-col">
-                                    <div class="flex items-start gap-4 mb-4">
-                                        <div class="flex-shrink-0 w-12 h-12 bg-slate-100 text-sky-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                            <i [ngClass]="getTrainingCardIcon(training.skill)" class="text-2xl"></i>
+                                <div class="p-3 flex-grow flex flex-col">
+                                    <div class="flex items-start gap-3 mb-2">
+                                        <div class="flex-shrink-0 w-9 h-9 bg-slate-100 text-sky-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                            <i [ngClass]="getTrainingCardIcon(training.skill)" class="text-lg"></i>
                                         </div>
                                         <div>
-                                            <h3 class="text-lg font-bold leading-tight text-slate-800">{{ training.training_name }}</h3>
-                                            <p class="text-sm text-slate-500">by {{ training.trainer_name }}</p>
+                                            <h3 class="text-sm font-bold leading-tight text-slate-800">{{ training.training_name }}</h3>
+                                            <p class="text-[11px] text-slate-500">by {{ training.trainer_name }}</p>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-2 flex-wrap mb-4">
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-sky-100 text-sky-800 ring-1 ring-inset ring-sky-200"><i class="fa-solid fa-display mr-1.5"></i>{{ training.training_type || 'N/A' }}</span>
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-violet-100 text-violet-800 ring-1 ring-inset ring-violet-200"><i class="fa-solid fa-layer-group mr-1.5"></i>{{ training.skill_category || 'N/A' }}</span>
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-200" *ngIf="training.seats"><i class="fa-solid fa-users mr-1.5"></i>{{ training.seats }} Seats</span>
+                                    <div class="flex items-center gap-2 flex-wrap mb-2">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-sky-100 text-sky-800 ring-1 ring-inset ring-sky-200"><i class="fa-solid fa-display mr-1.5"></i>{{ training.training_type || 'N/A' }}</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-violet-100 text-violet-800 ring-1 ring-inset ring-violet-200"><i class="fa-solid fa-layer-group mr-1.5"></i>{{ training.skill_category || 'N/A' }}</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-200" *ngIf="training.seats"><i class="fa-solid fa-users mr-1.5"></i>{{ training.seats }} Seats</span>
                                     </div>
-                                    <div class="flex-grow text-sm text-slate-600 mb-4">
+                                    <div class="flex-grow text-xs text-slate-600 mb-2">
                                         <p><strong class="font-semibold text-slate-700">Topics:</strong> {{ training.training_topics || 'Not specified' }}</p>
                                     </div>
-                                    <div class="pt-4 mt-auto border-t border-slate-200/80 space-y-2 text-sm">
+                                    <div class="pt-2 mt-auto border-t border-slate-200/80 space-y-2 text-xs">
                                         <div class="flex items-center justify-between text-slate-600">
                                             <div class="flex items-center gap-2">
                                                 <i class="fa-solid fa-calendar-days text-slate-400 w-4 text-center"></i>
@@ -491,8 +518,8 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="pt-4 mt-4 border-t border-slate-200/80">
-                                        <button (click)="enrollInTraining(training)" class="w-full bg-sky-600 text-white font-semibold py-2 rounded-lg hover:bg-sky-700 transition-colors duration-200">
+                                    <div class="pt-2 mt-2 border-t border-slate-200/80">
+                                        <button (click)="enrollInTraining(training)" class="w-full bg-sky-600 text-white font-semibold py-1.5 rounded-lg hover:bg-sky-700 transition-colors duration-200 text-xs">
                                             <i class="fa-solid fa-user-plus mr-2"></i>Enroll
                                         </button>
                                     </div>
@@ -502,7 +529,7 @@
                     </div>
                     
                     <div *ngIf="trainingCatalogView === 'calendar'" @fadeIn>
-                        <div class="bg-white/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-lg border border-slate-200/60">
+                        <div class="bg-white/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-200/60">
                             <div class="flex justify-between items-center mb-6">
                                 <button (click)="previousMonth()" class="w-10 h-10 bg-slate-200/70 rounded-lg hover:bg-slate-300/80 transition-colors flex items-center justify-center">
                                     <i class="fa-solid fa-chevron-left"></i>
@@ -521,7 +548,7 @@
                                 <div class="font-bold text-slate-500 py-2 text-xs sm:text-sm">FRI</div>
                                 <div class="font-bold text-slate-500 py-2 text-xs sm:text-sm">SAT</div>
     
-                                <div *ngFor="let day of calendarDays" class="relative h-20 sm:h-28 font-semibold rounded-lg transition-colors border border-slate-100/80"
+                                <div *ngFor="let day of calendarDays" class="relative h-20 font-semibold rounded-lg transition-colors border border-slate-100/80"
                                      [ngClass]="{
                                        'bg-sky-600 text-white shadow-lg': isToday(day),
                                        'bg-slate-50/50': day && !isToday(day),
@@ -531,10 +558,9 @@
                                      }">
                                     <span *ngIf="day" class="absolute top-1.5 left-2 text-xs sm:text-sm">{{ day.getDate() }}</span>
                                     <div *ngIf="getEventForDate(day, allTrainingsCalendarEvents) as event"
-                                         class="absolute inset-1 p-1 sm:p-1.5 text-[10px] sm:text-[11px] bg-sky-500 text-white rounded-md cursor-pointer leading-tight shadow-lg hover:bg-sky-600 flex flex-col justify-center text-center"
+                                         class="absolute inset-0.5 p-0.5 text-[10px] bg-sky-500 text-white rounded-md cursor-pointer leading-tight shadow-lg hover:bg-sky-600 flex flex-col justify-center text-center"
                                          [title]="event.title + ' - by ' + event.trainer">
                                         <span class="font-bold truncate">{{ event.title }}</span>
-                                        <span class="truncate text-white/80 text-[9px] sm:text-[10px] mt-0.5"><i class="fa-solid fa-chalkboard-user opacity-80 mr-1"></i>{{ event.trainer }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -549,34 +575,7 @@
                         <p class="text-slate-500 mt-1">Trainings assigned to you for skill development.</p>
                     </div>
 
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4 my-8">
-                        <div class="flex flex-wrap items-center justify-between gap-4">
-                            <div class="flex items-center gap-3 text-slate-800">
-                                <i class="fa-solid fa-filter text-sky-500"></i>
-                                <h3 class="text-md font-semibold">Filter Trainings</h3>
-                            </div>
-                            <div class="flex flex-wrap items-center gap-3">
-                                <div class="relative">
-                                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                    <input type="text" [(ngModel)]="assignedSearch" placeholder="Search..." class="w-full sm:w-40 pl-9 pr-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white/80 transition-all duration-300 focus:w-56">
-                                </div>
-                                <select [(ngModel)]="assignedSkillFilter" class="w-full sm:w-auto appearance-none px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer">
-                                    <option value="All">All Skills</option>
-                                    <option *ngFor="let name of skillNames" [value]="name">{{ name }}</option>
-                                </select>
-                                <select [(ngModel)]="assignedLevelFilter" class="w-full sm:w-auto appearance-none px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer">
-                                    <option value="All">All Levels</option>
-                                    <option *ngFor="let level of skillCategoryLevels" [value]="level">{{ level }}</option>
-                                </select>
-                                <input type="date" [(ngModel)]="assignedDateFilter" class="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white">
-                                <button (click)="resetAssignedTrainingFilters()" title="Reset Filters" class="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
-                                    <i class="fa-solid fa-rotate-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-end -mb-2">
+                    <div class="flex justify-end -mb-2 mt-8">
                         <div class="inline-flex rounded-lg shadow-sm bg-slate-200/70 p-1">
                             <button (click)="setAssignedTrainingsView('list')" class="px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200" [ngClass]="{'bg-white text-sky-600 shadow': assignedTrainingsView === 'list', 'text-slate-600 hover:bg-slate-300/50': assignedTrainingsView !== 'list'}">
                                 <i class="fa-solid fa-list-ul mr-2"></i>List View
@@ -588,20 +587,20 @@
                     </div>
                     
                     <div *ngIf="assignedTrainingsView === 'list'">
-                        <div *ngIf="filteredAssignedTrainings && filteredAssignedTrainings.length > 0; else noAssigned" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8" [@listStagger]="filteredAssignedTrainings.length">
+                        <div *ngIf="filteredAssignedTrainings && filteredAssignedTrainings.length > 0; else noAssigned" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-8" [@listStagger]="filteredAssignedTrainings.length">
                             <div *ngFor="let t of filteredAssignedTrainings"
-                                class="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200/60 transform hover:-translate-y-1 transition-all duration-300 hover:shadow-xl flex flex-col gap-4">
+                                class="bg-white/70 backdrop-blur-sm p-3 rounded-2xl shadow-lg border border-slate-200/60 transform hover:-translate-y-1 transition-all duration-300 hover:shadow-xl flex flex-col gap-2">
                                 <div class="flex items-start justify-between">
-                                    <div class="flex items-start gap-4">
-                                        <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                            <i [ngClass]="getTrainingCardIcon(t.skill)" class="text-2xl"></i>
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-9 h-9 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i [ngClass]="getTrainingCardIcon(t.skill)" class="text-lg"></i>
                                         </div>
                                         <div>
-                                            <h3 class="text-lg font-bold text-slate-800">{{ t.training_name }}</h3>
-                                            <p class="text-sm text-slate-500">by {{ t.trainer_name }}</p>
+                                            <h3 class="text-sm font-bold text-slate-800">{{ t.training_name }}</h3>
+                                            <p class="text-[11px] text-slate-500">by {{ t.trainer_name }}</p>
                                         </div>
                                     </div>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200">
                                         <i class="fa-solid fa-clock mr-1.5"></i> Upcoming
                                     </span>
                                 </div>
@@ -609,23 +608,23 @@
                                 <div class="flex items-center justify-between text-sm">
                                     <div class="flex items-center gap-2 text-slate-600">
                                         <i class="fa-solid fa-calendar-days text-slate-400"></i>
-                                        <span class="font-semibold text-slate-800">{{ t.training_date ? (t.training_date | date:'fullDate') : 'Date To Be Decided' }}</span>
+                                        <span class="font-semibold text-slate-800 text-xs">{{ t.training_date ? (t.training_date | date:'fullDate') : 'Date TBD' }}</span>
                                     </div>
                                     <div class="flex items-center gap-2 text-slate-600">
                                         <i class="fa-solid fa-clock text-slate-400"></i>
-                                        <span class="font-semibold text-slate-800">{{ t.time || 'Time TBD' }}</span>
+                                        <span class="font-semibold text-slate-800 text-xs">{{ t.time || 'Time TBD' }}</span>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-2 flex-wrap pt-2">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200"><i class="fa-solid fa-display mr-1.5"></i>{{ t.training_type || 'N/A' }}</span>
-                                    <span *ngIf="t.skill_category" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200"><i class="fa-solid fa-layer-group mr-1.5"></i>{{ t.skill_category }}</span>
-                                    <span *ngIf="t.skill" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200"><i class="fa-solid fa-code mr-1.5"></i>{{ t.skill }}</span>
+                                <div class="flex items-center gap-2 flex-wrap pt-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200"><i class="fa-solid fa-display mr-1.5"></i>{{ t.training_type || 'N/A' }}</span>
+                                    <span *ngIf="t.skill_category" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200"><i class="fa-solid fa-layer-group mr-1.5"></i>{{ t.skill_category }}</span>
+                                    <span *ngIf="t.skill" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200"><i class="fa-solid fa-code mr-1.5"></i>{{ t.skill }}</span>
                                 </div>
-                                 <div class="mt-auto pt-4 border-t border-slate-200/80 flex items-center gap-3">
-                                    <button (click)="viewAssignment(t)" class="flex-1 bg-violet-600 text-white font-semibold py-2 rounded-lg hover:bg-violet-700 transition-colors duration-200 text-sm">
+                                 <div class="mt-auto pt-2 border-t border-slate-200/80 flex items-center gap-3">
+                                    <button (click)="viewAssignment(t)" class="flex-1 bg-violet-600 text-white font-semibold py-1.5 rounded-lg hover:bg-violet-700 transition-colors duration-200 text-xs">
                                         <i class="fa-solid fa-file-lines mr-1.5"></i>View Assignment
                                     </button>
-                                    <button (click)="giveFeedback(t)" class="flex-1 bg-rose-600 text-white font-semibold py-2 rounded-lg hover:bg-rose-700 transition-colors duration-200 text-sm">
+                                    <button (click)="giveFeedback(t)" class="flex-1 bg-rose-600 text-white font-semibold py-1.5 rounded-lg hover:bg-rose-700 transition-colors duration-200 text-xs">
                                         <i class="fa-solid fa-comment-dots mr-1.5"></i>Give Feedback
                                     </button>
                                 </div>
@@ -644,7 +643,7 @@
                     </div>
 
                     <div *ngIf="assignedTrainingsView === 'calendar'" @fadeIn class="mt-8">
-                        <div class="bg-white/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-lg border border-slate-200/60">
+                        <div class="bg-white/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-200/60">
                             <div class="flex justify-between items-center mb-6">
                                 <button (click)="previousMonth()" class="w-10 h-10 bg-slate-200/70 rounded-lg hover:bg-slate-300/80 transition-colors flex items-center justify-center">
                                     <i class="fa-solid fa-chevron-left"></i>
@@ -663,7 +662,7 @@
                                 <div class="font-bold text-slate-500 py-2 text-xs sm:text-sm">FRI</div>
                                 <div class="font-bold text-slate-500 py-2 text-xs sm:text-sm">SAT</div>
     
-                                <div *ngFor="let day of calendarDays" class="relative h-20 sm:h-28 font-semibold rounded-lg transition-colors border border-slate-100/80"
+                                <div *ngFor="let day of calendarDays" class="relative h-20 font-semibold rounded-lg transition-colors border border-slate-100/80"
                                      [ngClass]="{
                                        'bg-sky-600 text-white shadow-lg': isToday(day),
                                        'bg-slate-50/50': day && !isToday(day),
@@ -673,10 +672,9 @@
                                      }">
                                     <span *ngIf="day" class="absolute top-1.5 left-2 text-xs sm:text-sm">{{ day.getDate() }}</span>
                                     <div *ngIf="getEventForDate(day, assignedTrainingsCalendarEvents) as event"
-                                         class="absolute inset-1 p-1 sm:p-1.5 text-[10px] sm:text-[11px] bg-rose-500 text-white rounded-md cursor-pointer leading-tight shadow-lg hover:bg-rose-600 flex flex-col justify-center text-center"
+                                         class="absolute inset-0.5 p-0.5 text-[10px] bg-rose-500 text-white rounded-md cursor-pointer leading-tight shadow-lg hover:bg-rose-600 flex flex-col justify-center text-center"
                                          [title]="event.title + ' - by ' + event.trainer">
                                         <span class="font-bold truncate">{{ event.title }}</span>
-                                        <span class="truncate text-white/80 text-[9px] sm:text-[10px] mt-0.5"><i class="fa-solid fa-chalkboard-user opacity-80 mr-1"></i>{{ event.trainer }}</span>
                                     </div>
                                 </div>
                             </div>

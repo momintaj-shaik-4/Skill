@@ -970,9 +970,11 @@ export class EngineerDashboardComponent implements OnInit {
     return 'fa-solid fa-laptop-code';
   }
 
-  getTechnicalSkillsCount = () => this.skills.filter(s => this.getSkillCategory(s.skill) !== 'Soft Skills').length + this.additionalSkills.filter(s => s.skill_category === 'Technical').length;
-  getSoftSkillsCount = () => this.skills.filter(s => this.getSkillCategory(s.skill) === 'Soft Skills').length + this.additionalSkills.filter(s => s.skill_category === 'Soft Skills').length;
-  getLeadershipSkillsCount = () => this.additionalSkills.filter(s => s.skill_category === 'Leadership').length;
+  // --- NEW COUNTERS FOR DASHBOARD WIDGETS ---
+  getAdditionalSkillsTotalCount = () => this.additionalSkills.length;
+  getAdditionalTechnicalSkillsCount = () => this.additionalSkills.filter(s => s.skill_category === 'Technical').length;
+  getAdditionalSoftSkillsCount = () => this.additionalSkills.filter(s => s.skill_category === 'Soft Skills').length;
+  getAdditionalLeadershipSkillsCount = () => this.additionalSkills.filter(s => s.skill_category === 'Leadership').length;
 
   // --- Additional Skills CRUD ---
   loadAdditionalSkills(): void {
