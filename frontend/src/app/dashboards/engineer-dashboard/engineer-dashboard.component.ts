@@ -161,6 +161,16 @@ export class EngineerDashboardComponent implements OnInit {
   // --- Levels Definitions ---
   levelsSearch = '';
   selectedSkill = '';
+  public expandedLevels = new Set<string>();
+  public expandedSkill: string | null = null; // <<< NEW PROPERTY FOR ACCORDION
+  levelHeaders = [
+    { num: 1, title: 'Beginner' },
+    { num: 2, title: 'Basic' },
+    { num: 3, title: 'Intermediate' },
+    { num: 4, title: 'Advanced' },
+    { num: 5, title: 'Expert' }
+  ];
+
 
   // --- Trainings & Catalog ---
   allTrainings: TrainingDetail[] = [];
@@ -885,6 +895,24 @@ export class EngineerDashboardComponent implements OnInit {
     alert(`Opening feedback form for "${training.training_name}". (This is a simulation).`);
   }
 
+  highlightUpcomingTrainings(): void {
+    const element = document.getElementById('upcoming-trainings-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Directly apply styles for a more reliable effect
+      element.style.transition = 'box-shadow 0.5s ease-in-out';
+      element.style.boxShadow = '0 0 0 4px #38bdf8, 0 0 15px #0ea5e9'; // A blue glow, similar to a ring
+
+      // Remove the styles after a delay
+      setTimeout(() => {
+        element.style.boxShadow = 'none';
+      }, 2500);
+    } else {
+      console.error("DEBUG: Could not find element with id 'upcoming-trainings-section'");
+    }
+  }
+
   // --- General Helpers ---
   getFilteredSkills(): Skill[] {
     let filtered = this.skills;
@@ -918,6 +946,36 @@ export class EngineerDashboardComponent implements OnInit {
   }
 
   // --- Levels Tab Helpers ---
+  public getLevelKey(sectionTitle: string, level: number): string {
+    return `${sectionTitle}-${level}`;
+  }
+
+  public toggleLevelExpansion(key: string): void {
+    if (this.expandedLevels.has(key)) {
+      this.expandedLevels.delete(key);
+    } else {
+      this.expandedLevels.add(key);
+    }
+  }
+
+  public isLevelExpanded(key: string): boolean {
+    return this.expandedLevels.has(key);
+  }
+
+  // <<< NEW METHOD FOR ACCORDION >>>
+  public toggleSkillExpansion(skillTitle: string): void {
+    if (this.expandedSkill === skillTitle) {
+        this.expandedSkill = null; // Collapse if clicking the same one again
+    } else {
+        this.expandedSkill = skillTitle; // Expand the new one
+    }
+  }
+
+  public getLevelItems(section: Section, levelNum: number): string[] {
+    const levelData = section.levels.find(l => l.level === levelNum);
+    return levelData ? levelData.items : [];
+  }
+
   getFilteredSections(): Section[] {
     let sectionsToFilter = this.sections;
     if (this.selectedSkill) {
@@ -930,9 +988,15 @@ export class EngineerDashboardComponent implements OnInit {
       const matchTitle = sec.title.toLowerCase().includes(q) || (sec.subtitle ?? '').toLowerCase().includes(q);
       const filteredLevels = sec.levels
         .map(l => ({ ...l, items: l.items.filter(it => it.toLowerCase().includes(q)) }))
-        .filter(l => l.items.length > 0 || `level ${l.level}`.includes(q));
-      if (matchTitle || filteredLevels.length) {
-        return { ...sec, levels: matchTitle ? sec.levels : filteredLevels };
+        .filter(l => l.items.length > 0);
+      
+      // If search query matches a skill title, show all its levels
+      // Otherwise, only show levels that have matching items
+      if (matchTitle) {
+          return sec;
+      }
+      if (filteredLevels.length > 0) {
+          return { ...sec, levels: filteredLevels };
       }
       return null;
     }).filter((s): s is Section => s !== null);
@@ -942,7 +1006,7 @@ export class EngineerDashboardComponent implements OnInit {
 
   // --- Visual Helpers ---
   getLevelHeaderClass = (level: number) => ['bg-red-50', 'bg-orange-50', 'bg-yellow-50', 'bg-blue-50', 'bg-green-50'][level - 1] || 'bg-gray-50';
-  getLevelBadgeClass = (level: number) => ['bg-sky-500', 'bg-sky-500', 'bg-sky-500', 'bg-sky-500', 'bg-sky-500'][level - 1] || 'bg-gray-500';
+  getLevelBadgeClass = (level: number) => ['bg-sky-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-emerald-500'][level - 1] || 'bg-gray-500';
   getLevelTitle = (level: number) => ['Beginner', 'Basic', 'Intermediate', 'Advanced', 'Expert'][level - 1] || 'Unknown';
   getLevelIcon = (level: number) => ['fa-solid fa-seedling text-sky-500', 'fa-solid fa-leaf text-sky-500', 'fa-solid fa-tree text-sky-600', 'fa-solid fa-rocket text-sky-500', 'fa-solid fa-crown text-sky-500'][level - 1] || 'fa-solid fa-circle';
   getComplexityDots = (level: number) => Array.from({ length: 5 }, (_, i) => i < level);
