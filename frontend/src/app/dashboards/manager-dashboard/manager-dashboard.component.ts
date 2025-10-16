@@ -2,6 +2,7 @@ import { Component, OnInit, ElementRef, QueryList, AfterViewInit, ViewChildren }
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { trigger, style, animate, transition, query, stagger } from '@angular/animations';
 
 interface Competency {
   skill: string;
@@ -54,6 +55,40 @@ interface TrainingDetail {
     training_type?: string;
     seats?: string;
     assessment_details?: string;
+    assignmentType?: 'personal' | 'team'; // Added to distinguish between personal and team assignments
+    assigned_to?: string; // Added for team assigned trainings
+}
+
+interface CalendarEvent {
+  date: Date;
+  title: string;
+  trainer: string;
+}
+
+// --- NEW, MORE DETAILED INTERFACES FOR ASSIGNMENTS ---
+export interface QuestionOption {
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface AssignmentQuestion {
+  text: string;
+  helperText: string; // Optional helper text like "Please select at most 2 options."
+  type: 'single-choice' | 'multiple-choice' | 'text-input';
+  options: QuestionOption[];
+}
+
+export interface Assignment {
+  trainingId: number | null;
+  title: string;
+  description: string;
+  questions: AssignmentQuestion[];
+}
+
+export interface FeedbackQuestion {
+    text: string;
+    options: string[];
+    isDefault: boolean;
 }
 
 type LevelBlock = { level: number; items: string[] };
@@ -62,7 +97,50 @@ type Section = { title: string; subtitle?: string; levels: LevelBlock[] };
 @Component({
   selector: 'app-manager-dashboard',
   templateUrl: './manager-dashboard.component.html',
-  styleUrls: ['./manager-dashboard.component.css']
+  styleUrls: ['./manager-dashboard.component.css'],
+  animations: [
+    trigger('fadeIn', [
+      transition(':enter', [
+        style({ opacity: 0 }),
+        animate('500ms ease-in', style({ opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('500ms ease-out', style({ opacity: 0 }))
+      ])
+    ]),
+    trigger('slideFadeIn', [
+        transition(':enter', [
+            style({ opacity: 0, transform: 'translateY(-20px)' }),
+            animate('500ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+        ]),
+        transition(':leave', [
+            animate('500ms ease-in', style({ opacity: 0, transform: 'translateY(-20px)' }))
+        ])
+    ]),
+    trigger('modalScale', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'scale(0.95)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'scale(1)' }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ opacity: 0, transform: 'scale(0.95)' }))
+      ])
+    ]),
+    trigger('listStagger', [
+      transition('* <=> *', [
+        query(':enter', [
+          style({ opacity: 0, transform: 'translateY(20px)' }),
+          stagger('120ms', animate('600ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })))
+        ], { optional: true })
+      ])
+    ]),
+    trigger('bouncyScale', [
+      transition(':enter', [
+        style({ transform: 'scale(0.5)', opacity: 0 }),
+        animate('700ms cubic-bezier(0.68, -0.55, 0.27, 1.55)', style({ transform: 'scale(1)', opacity: 1 }))
+      ])
+    ])
+  ]
 })
 export class ManagerDashboardComponent implements OnInit, AfterViewInit {
   @ViewChildren('animatedElement') animatedElements!: QueryList<ElementRef>;
@@ -81,6 +159,10 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
   topSkillGaps: any[] = [];
   assignedTrainingsCount: number = 0; // New metric!
   
+  // Dashboard view toggle
+  dashboardView: 'personal' | 'team' = 'personal';
+  pinnedItems: string[] = []; // For pin-to-pin feature
+  
   selectedTeamMember: TeamMember | null = null;
 
   editingSkill: { memberId: string, skillIndex: number } | null = null;
@@ -95,6 +177,7 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
   mySkillsStatusFilter: 'All' | 'Met' | 'Gap' = 'All';
   mySkillsSkillFilter: 'All' | string = 'All';
   mySkillsSearch: string = '';
+  mySkillsView: 'core' | 'additional' = 'core'; // New property for the toggle UI
   teamSkillsStatusFilter: 'All' | 'Met' | 'Gap' = 'All';
   teamSkillsSkillFilter: 'All' | string = 'All';
   teamMemberNameFilter: 'All' | string = 'All';
@@ -126,9 +209,57 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
   
   showScheduleTrainingModal = false;
   trainingCatalog: TrainingDetail[] = [];
+  allTrainings: TrainingDetail[] = [];
+  assignedTrainings: TrainingDetail[] = [];
+  teamAssignedTrainings: TrainingDetail[] = [];
   catalogSearch: string = '';
   catalogTypeFilter: string = 'All';
   catalogCategoryFilter: string = 'All';
+  
+  // --- Assigned Trainings Filters ---
+  assignedSearch: string = '';
+  assignedSkillFilter: string = 'All';
+  assignedLevelFilter: string = 'All';
+  assignedDateFilter: string = '';
+  assignedTrainingsView: 'list' | 'calendar' = 'list';
+  trainingCatalogView: 'list' | 'calendar' = 'list';
+
+  // --- Calendar & Dashboard Metrics ---
+  allTrainingsCalendarEvents: CalendarEvent[] = [];
+  assignedTrainingsCalendarEvents: CalendarEvent[] = [];
+  currentDate: Date = new Date();
+  calendarDays: (Date | null)[] = [];
+  calendarMonth: string = '';
+  calendarYear: number = 2025;
+
+  // --- Trainer Zone Properties ---
+  isTrainer: boolean = false;
+  trainerZoneView: 'overview' | 'assignmentForm' | 'feedbackForm' = 'overview';
+  
+  // Assignment and Feedback Forms
+  newAssignment: Assignment = {
+    trainingId: null,
+    title: '',
+    description: '',
+    questions: []
+  };
+  
+  defaultFeedbackQuestions: FeedbackQuestion[] = [
+    { text: "How would you rate your overall experience with this training?", options: ['Excellent', 'Good', 'Average', 'Fair', 'Poor'], isDefault: true },
+    { text: "Was the content relevant and applicable to your role?", options: ['Yes', 'No', 'Partially'], isDefault: true },
+    { text: "Was the material presented in a clear and understandable way?", options: ['Yes', 'No', 'Somewhat'], isDefault: true },
+    { text: "Did the training meet your expectations?", options: ['Yes', 'No', 'Partially'], isDefault: true },
+    { text: "Was the depth of the content appropriate?", options: ['Appropriate', 'Too basic', 'Too advanced'], isDefault: true },
+    { text: "Was the trainer able to explain concepts clearly?", options: ['Yes', 'No', 'Somewhat'], isDefault: true },
+    { text: "Did the trainer engage participants effectively?", options: ['Yes', 'No', 'Somewhat'], isDefault: true },
+    { text: "Will this training improve your day-to-day job performance?", options: ['Yes', 'No', 'Maybe'], isDefault: true },
+    { text: "Was the pace of the training comfortable?", options: ['Comfortable', 'Too fast', 'Too slow'], isDefault: true },
+    { text: "Were the training materials/resources useful?", options: ['Yes', 'No', 'Somewhat'], isDefault: true }
+  ];
+  newFeedback = {
+    trainingId: null as number | null,
+    customQuestions: [] as FeedbackQuestion[]
+  };
   
   newTraining = {
     division: '',
@@ -160,6 +291,15 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
 
   levelsSearch = '';
   selectedSkill = '';
+  public expandedLevels = new Set<string>();
+  public expandedSkill: string | null = null;
+  levelHeaders = [
+    { num: 1, title: 'Beginner' },
+    { num: 2, title: 'Basic' },
+    { num: 3, title: 'Intermediate' },
+    { num: 4, title: 'Advanced' },
+    { num: 5, title: 'Expert' }
+  ];
   sections: Section[] = [
     {
       title: 'EXAM',
@@ -271,9 +411,12 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadPinnedItems();
     this.fetchDashboardData();
     this.fetchTrainingCatalog();
+    this.fetchAssignedTrainings();
     this.fetchAssignedTrainingsCount();
+    this.fetchTeamAssignedTrainings();
   }
 
   fetchAssignedTrainingsCount(): void {
@@ -303,6 +446,9 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
     if (tabName === 'trainingCatalog' || tabName === 'assignTraining' || tabName === 'trainerZone') {
         this.fetchTrainingCatalog();
     }
+    if (tabName === 'assignedTrainings') {
+        this.fetchAssignedTrainings();
+    }
     this.selectedTeamMember = null;
     this.mySkillsStatusFilter = 'All';
     this.mySkillsSkillFilter = 'All';
@@ -315,6 +461,158 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
         this.animatedElements.forEach(el => this.observer.observe(el.nativeElement));
     }, 0);
+  }
+
+  // Dashboard view toggle methods
+  // ============================
+  // === CORRECTED THIS BLOCK ===
+  // ============================
+  toggleDashboardView(): void {
+    // The call to fetchTeamAssignedTrainings() was removed from here.
+    // It's already called in ngOnInit(), so the data is loaded once when the component
+    // initializes, which is more efficient.
+    this.dashboardView = this.dashboardView === 'personal' ? 'team' : 'personal';
+  }
+
+  // Pin-to-pin feature methods
+  togglePin(item: string): void {
+    const index = this.pinnedItems.indexOf(item);
+    if (index > -1) {
+      this.pinnedItems.splice(index, 1);
+    } else {
+      this.pinnedItems.push(item);
+    }
+    // Save to localStorage for persistence
+    localStorage.setItem('managerPinnedItems', JSON.stringify(this.pinnedItems));
+  }
+
+  isPinned(item: string): boolean {
+    return this.pinnedItems.includes(item);
+  }
+
+  loadPinnedItems(): void {
+    const saved = localStorage.getItem('managerPinnedItems');
+    if (saved) {
+      this.pinnedItems = JSON.parse(saved);
+    }
+  }
+
+  // Team dashboard specific methods
+  getTeamSkillGaps(): any[] {
+    if (!this.manager) return [];
+    const allTeamSkills = this.manager.team.flatMap(member => member.skills);
+    const skillGapCount: { [key: string]: number } = {};
+    allTeamSkills.forEach(skill => {
+      if (skill.status === 'Gap') {
+        skillGapCount[skill.skill] = (skillGapCount[skill.skill] || 0) + 1;
+      }
+    });
+    return Object.entries(skillGapCount)
+      .map(([skill, count]) => ({ skill, count }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  getTeamMembersWithGaps(): TeamMember[] {
+    if (!this.manager) return [];
+    return this.manager.team.filter(member => 
+      member.skills.some(skill => skill.status === 'Gap')
+    );
+  }
+
+  getTeamProgressByMember(): { member: TeamMember; progress: number }[] {
+    if (!this.manager) return [];
+    return this.manager.team.map(member => ({
+      member,
+      progress: this.calculateProgress(member.skills)
+    })).sort((a, b) => b.progress - a.progress);
+  }
+
+  getUpcomingTeamTrainings(): TrainingDetail[] {
+    // This would typically come from an API call for team assigned trainings
+    return this.assignedTrainings.filter(t => 
+      t.training_date && new Date(t.training_date) >= new Date()
+    ).slice(0, 5);
+  }
+
+  // Get trainings assigned by the manager to team members
+  getTeamAssignedTrainings(): TrainingDetail[] {
+    // This will be populated from the team assigned trainings API call
+    return this.teamAssignedTrainings || [];
+  }
+
+  // Get the name of the team member for a given employee ID
+  getAssignedMemberName(employeeId: string | undefined): string {
+    if (!employeeId || !this.manager || !this.manager.team) return employeeId || 'Unknown';
+    const member = this.manager.team.find(m => m.id === employeeId);
+    return member ? member.name : employeeId;
+  }
+
+  // Personal dashboard methods (same as engineer dashboard)
+  getPersonalProgressPercentage(): number {
+    if (!this.manager?.skills?.length) return 0;
+    const totalSkills = this.manager.skills.length;
+    const metSkills = this.getMySkillsMetCount();
+    return totalSkills > 0 ? Math.round((metSkills / totalSkills) * 100) : 0;
+  }
+
+  getUpcomingPersonalTrainings(): TrainingDetail[] {
+    if (!this.assignedTrainings || this.assignedTrainings.length === 0) {
+      return [];
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return this.assignedTrainings
+      .filter(t => t.training_date && new Date(t.training_date) >= today)
+      .sort((a, b) => {
+        return new Date(a.training_date!).getTime() - new Date(b.training_date!).getTime();
+      });
+  }
+
+  highlightUpcomingTrainings(): void {
+    const element = document.getElementById('upcoming-trainings-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.style.transition = 'box-shadow 0.5s ease-in-out';
+      element.style.boxShadow = '0 0 0 4px #38bdf8, 0 0 15px #0ea5e9';
+      setTimeout(() => {
+        element.style.boxShadow = 'none';
+      }, 2500);
+    }
+  }
+
+  getTrainingCardIcon(skill?: string | null): string {
+    if (!skill) return 'fa-solid fa-laptop-code';
+    const skillLower = skill.toLowerCase();
+    if (skillLower.includes('softcar')) return 'fa-solid fa-car';
+    if (skillLower.includes('integrity')) return 'fa-solid fa-shield-halved';
+    if (skillLower.includes('exam')) return 'fa-solid fa-microscope';
+    if (skillLower.includes('cpp') || skillLower.includes('c++')) return 'fa-solid fa-code';
+    if (skillLower.includes('python')) return 'fa-brands fa-python';
+    if (skillLower.includes('matlab')) return 'fa-solid fa-chart-line';
+    if (skillLower.includes('doors')) return 'fa-solid fa-door-open';
+    if (skillLower.includes('azure')) return 'fa-brands fa-microsoft';
+    if (skillLower.includes('git')) return 'fa-brands fa-git-alt';
+    if (skillLower.includes('axivion')) return 'fa-solid fa-search';
+    return 'fa-solid fa-laptop-code';
+  }
+
+  // Fetch team assigned trainings
+  fetchTeamAssignedTrainings(): void {
+    const token = this.authService.getToken();
+    if (!token) return;
+    const headers = new HttpHeaders({ 'Authorization': `Bearer ${token}` });
+    
+    this.http.get<TrainingDetail[]>('http://localhost:8000/assignments/manager/team', { headers }).subscribe({
+      next: (response) => {
+        console.log('Team assigned trainings loaded:', response);
+        this.teamAssignedTrainings = response || [];
+      },
+      error: (err) => {
+        console.error('Failed to fetch team assigned trainings:', err);
+        this.teamAssignedTrainings = [];
+      }
+    });
   }
   
   openScheduleTrainingModal(): void {
@@ -347,7 +645,7 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
   }
 
   // New Modal Methods
-  openDetailModal(type: 'mySkillsMet' | 'mySkillGaps' | 'teamSkillsMet' | 'teamSkillGaps' | 'totalMembers' | 'additionalSkills') {
+  openDetailModal(type: 'mySkillsMet' | 'mySkillGaps' | 'teamSkillsMet' | 'teamSkillGaps' | 'totalMembers' | 'additionalSkills' | 'coreSkills') {
     if (!this.manager) return;
     
     this.modalDataType = null;
@@ -357,6 +655,16 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
         this.modalTitle = 'Total Team Members';
         this.modalData = this.manager.team;
         this.modalDataType = 'members';
+        break;
+      case 'coreSkills':
+        this.modalTitle = 'Core Skills';
+        // For Core Skills, we show all core skills without status
+        this.modalData = this.sections.map((section, index) => ({
+          id: index + 1,
+          skill: section.title,
+          competency: section.subtitle || 'Core Competency'
+        }));
+        this.modalDataType = 'skills';
         break;
       case 'mySkillsMet':
         this.modalTitle = 'My Skills Met';
@@ -450,10 +758,48 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
 
     this.http.get<TrainingDetail[]>('http://localhost:8000/trainings/', { headers }).subscribe({
       next: (data) => {
+        console.log('Training catalog data loaded:', data);
         this.trainingCatalog = data;
+        this.allTrainings = data; // Align with engineer dashboard
+        this.allTrainingsCalendarEvents = this.allTrainings
+          .filter(t => t.training_date)
+          .map(t => ({
+            date: new Date(t.training_date as string),
+            title: t.training_name,
+            trainer: t.trainer_name || 'N/A'
+          }));
       },
       error: (err) => {
+        console.error('Failed to load training catalog:', err);
         this.errorMessage = 'Failed to load training catalog.';
+      }
+    });
+  }
+
+  fetchAssignedTrainings(): void {
+    const token = this.authService.getToken();
+    if (!token) return;
+    const headers = new HttpHeaders({ 'Authorization': `Bearer ${token}` });
+    
+    // For managers, only fetch personal assigned trainings (assigned to the manager by their manager)
+    // Team assigned trainings should not be shown in the "Assigned Trainings" tab
+    this.http.get<TrainingDetail[]>('http://localhost:8000/assignments/my', { headers }).subscribe({
+      next: (response) => {
+        console.log('Personal assigned trainings loaded:', response);
+        this.assignedTrainings = (response || []).map(t => ({ ...t, assignmentType: 'personal' as const }));
+        this.assignedTrainingsCalendarEvents = this.assignedTrainings
+          .filter(t => t.training_date)
+          .map(t => ({
+            date: new Date(t.training_date as string),
+            title: t.training_name,
+            trainer: t.trainer_name || 'N/A'
+          }));
+        this.generateCalendar();
+      },
+      error: (err) => {
+        console.error('Failed to fetch assigned trainings:', err);
+        this.assignedTrainings = [];
+        this.assignedTrainingsCalendarEvents = [];
       }
     });
   }
@@ -755,6 +1101,33 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
     return list;
   }
 
+  get filteredAssignedTrainings(): TrainingDetail[] {
+    let list = [...(this.assignedTrainings || [])];
+    if (this.assignedSearch && this.assignedSearch.trim()) {
+      const q = this.assignedSearch.trim().toLowerCase();
+      list = list.filter(t =>
+        (t.training_name || '').toLowerCase().includes(q) ||
+        (t.trainer_name || '').toLowerCase().includes(q) ||
+        (t.skill || '').toLowerCase().includes(q)
+      );
+    }
+    if (this.assignedSkillFilter !== 'All') {
+      list = list.filter(t => t.skill === this.assignedSkillFilter);
+    }
+    if (this.assignedLevelFilter !== 'All') {
+      list = list.filter(t => t.skill_category === this.assignedLevelFilter);
+    }
+    if (this.assignedDateFilter) {
+      list = list.filter(t => t.training_date === this.assignedDateFilter);
+    }
+    list.sort((a, b) => {
+      const dateA = a.training_date ? new Date(a.training_date).getTime() : Infinity;
+      const dateB = b.training_date ? new Date(b.training_date).getTime() : Infinity;
+      return dateA - dateB;
+    });
+    return list;
+  }
+
   get filteredAssignMembers(): TeamMember[] {
     if (!this.manager || !this.manager.team) return [];
     const q = (this.assignMemberSearch || '').trim().toLowerCase();
@@ -948,4 +1321,288 @@ export class ManagerDashboardComponent implements OnInit, AfterViewInit {
   getLevelIcon = (level: number) => ['fa-solid fa-seedling text-indigo-500', 'fa-solid fa-leaf text-indigo-500', 'fa-solid fa-tree text-indigo-600', 'fa-solid fa-rocket text-indigo-500', 'fa-solid fa-crown text-indigo-500'][level - 1] || 'fa-solid fa-circle';
   getComplexityDots = (level: number) => Array.from({ length: 5 }, (_, i) => i < level);
   onSkillChange(): void {}
+
+  // --- Levels Tab Helpers ---
+  public getLevelKey(sectionTitle: string, level: number): string {
+    return `${sectionTitle}-${level}`;
+  }
+
+  public toggleLevelExpansion(key: string): void {
+    if (this.expandedLevels.has(key)) {
+      this.expandedLevels.delete(key);
+    } else {
+      this.expandedLevels.add(key);
+    }
+  }
+
+  public isLevelExpanded(key: string): boolean {
+    return this.expandedLevels.has(key);
+  }
+
+  // <<< NEW METHOD FOR ACCORDION >>>
+  public toggleSkillExpansion(skillTitle: string): void {
+    if (this.expandedSkill === skillTitle) {
+        this.expandedSkill = null; // Collapse if clicking the same one again
+    } else {
+        this.expandedSkill = skillTitle; // Expand the new one
+    }
+  }
+
+  public getLevelItems(section: Section, levelNum: number): string[] {
+    const levelData = section.levels.find(l => l.level === levelNum);
+    return levelData ? levelData.items : [];
+  }
+
+  // --- Filter Reset Logic ---
+  resetMySkillsFilters(): void {
+    this.mySkillsSearch = '';
+    this.mySkillsSkillFilter = 'All';
+    this.mySkillsStatusFilter = 'All';
+  }
+
+  resetCatalogFilters(): void {
+    this.catalogSearch = '';
+    this.catalogTypeFilter = 'All';
+    this.catalogCategoryFilter = 'All';
+  }
+
+  resetAssignedTrainingFilters(): void {
+    this.assignedSearch = '';
+    this.assignedSkillFilter = 'All';
+    this.assignedLevelFilter = 'All';
+    this.assignedDateFilter = '';
+  }
+
+  // --- View Toggle Logic ---
+  setTrainingCatalogView(view: 'list' | 'calendar'): void {
+    this.trainingCatalogView = view;
+    if (view === 'calendar') {
+      this.generateCalendar();
+    }
+  }
+
+  setAssignedTrainingsView(view: 'list' | 'calendar'): void {
+    this.assignedTrainingsView = view;
+    if (view === 'calendar') {
+      this.generateCalendar();
+    }
+  }
+
+  // --- Trainer Zone Methods ---
+  setTrainerZoneView(view: 'overview' | 'assignmentForm' | 'feedbackForm'): void {
+    if (view === 'overview') {
+      this.resetNewAssignmentForm();
+      this.resetNewFeedbackForm();
+    }
+    this.trainerZoneView = view;
+  }
+
+  resetNewAssignmentForm(): void {
+    this.newAssignment = {
+      trainingId: null,
+      title: '',
+      description: '',
+      questions: []
+    };
+  }
+
+  submitAssignment(): void {
+    if (!this.newAssignment.trainingId || !this.newAssignment.title.trim() || this.newAssignment.questions.length === 0) {
+      alert('Please select a training, provide a title, and add at least one question.');
+      return;
+    }
+
+    for (const q of this.newAssignment.questions) {
+      if (!q.text.trim()) {
+        alert('Please ensure all questions have text.');
+        return;
+      }
+      if (q.type === 'single-choice' || q.type === 'multiple-choice') {
+        if (q.options.some(opt => !opt.text.trim())) {
+          alert('Please ensure all options have text.');
+          return;
+        }
+        if (!q.options.some(opt => opt.isCorrect)) {
+          alert(`Please mark at least one correct answer for the question: "${q.text}"`);
+          return;
+        }
+      }
+    }
+
+    console.log('Submitting Assignment Data:', JSON.stringify(this.newAssignment, null, 2));
+    alert('Assignment with structured questions created successfully! (Simulated - check browser console for the data structure)');
+    this.setTrainerZoneView('overview');
+  }
+
+  addAssignmentQuestion(): void {
+    this.newAssignment.questions.push({
+      text: '',
+      helperText: '',
+      type: 'single-choice',
+      options: [
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false }
+      ]
+    });
+  }
+
+  removeAssignmentQuestion(qIndex: number): void {
+    this.newAssignment.questions.splice(qIndex, 1);
+  }
+
+  onQuestionTypeChange(question: AssignmentQuestion): void {
+    if ((question.type === 'single-choice' || question.type === 'multiple-choice') && question.options.length === 0) {
+      question.options.push({ text: '', isCorrect: false }, { text: '', isCorrect: false });
+    }
+    if (question.type === 'single-choice') {
+        let firstCorrectFound = false;
+        question.options.forEach(opt => {
+            if (opt.isCorrect) {
+                if (firstCorrectFound) {
+                    opt.isCorrect = false;
+                }
+                firstCorrectFound = true;
+            }
+        });
+    }
+  }
+
+  addOptionToQuestion(qIndex: number): void {
+    this.newAssignment.questions[qIndex].options.push({ text: '', isCorrect: false });
+  }
+
+  removeOptionFromQuestion(qIndex: number, oIndex: number): void {
+    this.newAssignment.questions[qIndex].options.splice(oIndex, 1);
+  }
+
+  toggleCorrectOption(qIndex: number, oIndex: number): void {
+    const question = this.newAssignment.questions[qIndex];
+    if (question.type === 'single-choice') {
+      question.options.forEach((opt, index) => {
+        opt.isCorrect = (index === oIndex);
+      });
+    } else if (question.type === 'multiple-choice') {
+      question.options[oIndex].isCorrect = !question.options[oIndex].isCorrect;
+    }
+  }
+
+  resetNewFeedbackForm(): void {
+    this.newFeedback = { trainingId: null, customQuestions: [] };
+  }
+
+  submitFeedback(): void {
+    if (!this.newFeedback.trainingId) {
+      alert('Please select a training for the feedback form.');
+      return;
+    }
+    const finalCustomQuestions = this.newFeedback.customQuestions
+        .filter(q => q.text.trim() !== '')
+        .map(q => ({
+            ...q,
+            options: q.options.filter(opt => opt.trim() !== '')
+        }))
+        .filter(q => q.options.length > 0);
+
+    console.log({
+      trainingId: this.newFeedback.trainingId,
+      defaultQuestions: this.defaultFeedbackQuestions,
+      customQuestions: finalCustomQuestions
+    });
+    alert('Feedback form created successfully! (Simulated)');
+    this.setTrainerZoneView('overview');
+  }
+
+  addCustomQuestion(): void {
+    this.newFeedback.customQuestions.push({
+      text: '',
+      options: [''],
+      isDefault: false
+    });
+  }
+
+  removeCustomQuestion(index: number): void {
+    this.newFeedback.customQuestions.splice(index, 1);
+  }
+
+  addOption(questionIndex: number): void {
+    this.newFeedback.customQuestions[questionIndex].options.push('');
+  }
+
+  removeOption(questionIndex: number, optionIndex: number): void {
+    this.newFeedback.customQuestions[questionIndex].options.splice(optionIndex, 1);
+  }
+
+  trackByFn(index: any, item: any) {
+    return index;
+  }
+
+  // --- Missing Methods ---
+  viewAssignment(training: any): void {
+    // TODO: Implement view assignment functionality
+    console.log('Viewing assignment for training:', training);
+  }
+
+  giveFeedback(training: any): void {
+    // TODO: Implement give feedback functionality
+    console.log('Giving feedback for training:', training);
+  }
+
+  // --- Calendar logic ---
+  generateCalendar(): void {
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    this.calendarMonth = this.currentDate.toLocaleString('default', { month: 'long' });
+    this.calendarYear = year;
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDay = firstDay.getDay();
+
+    this.calendarDays = [];
+    for (let i = 0; i < startDay; i++) {
+      this.calendarDays.push(null);
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      this.calendarDays.push(new Date(year, month, i));
+    }
+  }
+
+  previousMonth(): void {
+    this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+    this.generateCalendar();
+  }
+
+  nextMonth(): void {
+    this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+    this.generateCalendar();
+  }
+
+  isToday(date: Date | null): boolean {
+    if (!date) return false;
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+  }
+
+  getEventForDate(date: Date | null, events: CalendarEvent[]): CalendarEvent[] {
+    if (!date) return [];
+    return events.filter(event =>
+      event.date.getDate() === date.getDate() &&
+      event.date.getMonth() === date.getMonth() &&
+      event.date.getFullYear() === date.getFullYear()
+    );
+  }
+
+  trackByEventId(index: number, event: CalendarEvent): string {
+    return event.title + event.trainer + event.date.getTime();
+  }
+
+
+  // --- Training Enrollment ---
+  enrollInTraining(training: TrainingDetail): void {
+    // This is a placeholder method. In a real app, you would make an API call here.
+    alert(`Enrolled in "${training.training_name}" successfully!`);
+  }
 }

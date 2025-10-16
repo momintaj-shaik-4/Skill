@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -14,6 +14,15 @@ export interface Skill {
   current_expertise: string;
   target_expertise: string;
   status: 'Met' | 'Gap' | 'Error';
+}
+
+export interface ModalSkill {
+  id: number;
+  skill: string;
+  competency: string;
+  current_expertise?: string;
+  target_expertise?: string;
+  status?: 'Met' | 'Gap' | 'Error';
 }
 
 export interface TrainingDetail {
@@ -34,6 +43,7 @@ export interface TrainingDetail {
   training_type?: string;
   seats?: string;
   assessment_details?: string;
+  assignmentType?: 'personal' | 'team'; // Added to distinguish between personal and team assignments
 }
 
 // --- NEW, MORE DETAILED INTERFACES FOR ASSIGNMENTS ---
@@ -142,7 +152,7 @@ export class EngineerDashboardComponent implements OnInit {
   // --- Skills Modal State ---
   showSkillsModal: boolean = false;
   modalTitle: string = '';
-  modalSkills: Skill[] = [];
+  modalSkills: ModalSkill[] = [];
 
   // --- Additional (Self-Reported) Skills ---
   additionalSkills: any[] = [];
@@ -355,7 +365,8 @@ export class EngineerDashboardComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -471,18 +482,20 @@ export class EngineerDashboardComponent implements OnInit {
   }
 
   processDashboardData(): void {
+    // Core Skills count is based on static sections (10 skills)
+    this.totalSkills = this.sections.length;
+    
     if (!this.skills || this.skills.length === 0) {
       // Use hardcoded defaults if API fails or returns no skills
-      this.totalSkills = 10;
-      this.skillsMet = 5;
-      this.skillsGap = 5;
-      this.progressPercentage = 50;
+      this.skillsMet = 3; // Default value for Skills Met
+      this.skillsGap = 7; // Default value for Skills Gap
+      this.progressPercentage = 30; // 3/10 = 30%
       this.skillGaps = [];
       this.badges = [];
       return;
     }
 
-    this.totalSkills = this.skills.length;
+    // Skills Met count is based on API skills with status "Met"
     this.skillsMet = this.skills.filter(s => s.status === 'Met').length;
     this.skillsGap = this.skills.filter(s => s.status === 'Gap').length;
     this.progressPercentage = this.totalSkills > 0
@@ -539,7 +552,7 @@ export class EngineerDashboardComponent implements OnInit {
     const headers = new HttpHeaders({ 'Authorization': `Bearer ${token}` });
     this.http.get<TrainingDetail[]>('http://localhost:8000/assignments/my', { headers }).subscribe({
       next: (response) => {
-        this.assignedTrainings = response || [];
+        this.assignedTrainings = (response || []).map(t => ({ ...t, assignmentType: 'personal' as const }));
         this.assignedTrainingsCalendarEvents = this.assignedTrainings
             .filter(t => t.training_date)
             .map(t => ({
@@ -830,20 +843,46 @@ export class EngineerDashboardComponent implements OnInit {
 
   // --- Skills Modal Logic ---
   openSkillsModal(filterStatus: 'all' | 'Met'): void {
+    // Reset modal data first
+    this.modalTitle = '';
+    this.modalSkills = [];
+    
     if (filterStatus === 'all') {
-      this.modalTitle = 'All Assigned Skills';
-      this.modalSkills = this.skills;
+      this.modalTitle = 'Core Skills';
+      // For Core Skills, we show all core skills without status
+      this.modalSkills = this.sections.map((section, index) => ({
+        id: index + 1,
+        skill: section.title,
+        competency: section.subtitle || 'Core Competency'
+      }));
+      console.log('Core Skills data:', this.modalSkills);
     } else if (filterStatus === 'Met') {
       this.modalTitle = 'Skills Met';
-      this.modalSkills = this.skills.filter(s => s.status === 'Met');
+      // For Skills Met, we show the API skills with status "Met"
+      this.modalSkills = this.skills.filter(s => s.status === 'Met').map(skill => ({
+        id: skill.id,
+        skill: skill.skill,
+        competency: skill.competency,
+        current_expertise: skill.current_expertise,
+        target_expertise: skill.target_expertise,
+        status: skill.status
+      }));
+      console.log('Skills Met data:', this.modalSkills);
     }
+    
+    console.log('Opening modal:', { filterStatus, modalTitle: this.modalTitle, modalSkillsCount: this.modalSkills.length });
+    
+    // Force change detection and then show modal
+    this.cdr.detectChanges();
     this.showSkillsModal = true;
   }
 
   closeSkillsModal(): void {
     this.showSkillsModal = false;
+    // Reset modal data
     this.modalTitle = '';
     this.modalSkills = [];
+    console.log('Modal closed and reset');
   }
 
   // --- Filter Reset Logic ---
@@ -922,11 +961,27 @@ export class EngineerDashboardComponent implements OnInit {
     return filtered;
   }
 
-  getSkillProgress(competency: Skill): number {
-    const current = parseInt(competency.current_expertise, 10) || 0;
-    const target = parseInt(competency.target_expertise, 10) || 1;
+  getSkillProgress(competency: Skill | ModalSkill): number {
+    const extractLevel = (level: string): number => {
+      if (!level) return 0;
+      if (level.toUpperCase().startsWith('L')) {
+        return parseInt(level.substring(1), 10) || 0;
+      }
+      const levelMap: { [key: string]: number } = {
+        'BEGINNER': 1, 'INTERMEDIATE': 2, 'ADVANCED': 3, 'EXPERT': 4
+      };
+      return levelMap[level.toUpperCase()] || 0;
+    };
+
+    const current = extractLevel(competency.current_expertise || '0');
+    const target = extractLevel(competency.target_expertise || '1');
+
+    if (target === 0) return 0;
+
     let percent = Math.round((current / target) * 100);
-    return Math.min(100, Math.max(0, percent));
+    if (percent > 100) percent = 100;
+    if (percent < 0) percent = 0;
+    return percent;
   }
 
   getFormattedDate(): string {

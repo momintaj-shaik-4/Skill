@@ -1,3 +1,4 @@
+
 <div class="flex h-screen bg-slate-100 font-sans text-slate-800">
     <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-20 overflow-hidden">
         <div class="px-6 py-4 text-center border-b border-slate-700/50">
@@ -98,7 +99,7 @@
     <div *ngIf="activeTab === 'mySkills'" @fadeIn>
         <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2 text-white">
-                <h2 class="text-sm font-semibold">Core Skills</h2>
+                <h2 class="text-sm font-semibold" title="Skills required for your job role">Core Skills</h2>
             </div>
             <div class="flex flex-wrap items-center gap-1.5">
                 <div class="relative">
@@ -208,28 +209,29 @@
             </div>
 
             <div *ngIf="!isLoading && activeTab === 'dashboard'" @slideFadeIn class="space-y-4">
-                 <div @bouncyScale class="flex justify-between items-center bg-gradient-to-r from-blue-700 to-blue-700 text-white px-5 py-2.5 rounded-2xl shadow-lg backdrop-blur-sm border border-white/10">
-                     <div class="flex items-center gap-4">
-                         <h2 class="text-lg font-bold tracking-tight">Welcome, {{ employeeName }}!</h2>
-                         <div class="w-px h-5 bg-white/20"></div>
-                         <p class="text-white-300/90 text-sm hidden lg:block">Here's your competency summary.</p>
-                     </div>
-                      <div class="flex items-center gap-2">
-                         <button (click)="openSkillsModal('all')" class="bg-white/10 px-3 py-1.5 rounded-lg text-center ring-1 ring-white/15 transition-colors duration-200 hover:bg-white/20 flex items-center gap-2">
-                              <span class="text-xl font-bold">{{ totalSkills }}</span>
-                              <span class="text-[11px] text-slate-200 leading-tight">Core<br>Skills</span>
-                         </button>
-                         <button (click)="openSkillsModal('Met')" class="bg-white/10 px-3 py-1.5 rounded-lg text-center ring-1 ring-white/15 transition-colors duration-200 hover:bg-white/20 flex items-center gap-2">
-                               <span class="text-xl font-bold">{{ skillsMet }}</span>
-                               <span class="text-[11px] text-slate-200 leading-tight">Skills<br>Met</span>
-                         </button>
-                      </div>
-                 </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4 space-y-4">
+                <!-- Welcome section moved to top -->
+                <div @bouncyScale class="flex justify-between items-center bg-gradient-to-r from-blue-700 to-blue-700 text-white px-3 py-1.5 rounded-lg shadow-lg backdrop-blur-sm border border-white/10">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xs font-bold tracking-tight">Welcome, {{ employeeName }}!</h2>
+                        <div class="w-px h-3 bg-white/20"></div>
+                        <p class="text-white-300/90 text-[10px] hidden lg:block">Personal development overview</p>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button (click)="openSkillsModal('all')" class="bg-white/10 px-1.5 py-0.5 rounded-md text-center ring-1 ring-white/15 transition-colors duration-200 hover:bg-white/20 flex items-center gap-1">
+                            <span class="text-sm font-bold">{{ totalSkills }}</span>
+                            <span class="text-[9px] text-slate-200 leading-tight">Core<br>Skills</span>
+                        </button>
+                        <button (click)="openSkillsModal('Met')" class="bg-white/10 px-1.5 py-0.5 rounded-md text-center ring-1 ring-white/15 transition-colors duration-200 hover:bg-white/20 flex items-center gap-1">
+                            <span class="text-sm font-bold">{{ skillsMet }}</span>
+                            <span class="text-[9px] text-slate-200 leading-tight">Skills<br>Met</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-2">
+                    <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/60 p-2 space-y-2">
                         <div>
-                            <h3 class="text-base font-bold text-slate-900 mb-2" title="Skills required for your job role."><b>Core Skills</b></h3>
+                            <h3 class="text-base font-bold text-slate-900 mb-2 cursor-pointer hover:text-sky-600 transition-colors" title="Skills required for your job role" (click)="openSkillsModal('all')"><b>Core Skills</b></h3>
                             <div class="grid grid-cols-3 sm:grid-cols-4 gap-2" [@listStagger]="sections.length">
                                 <div *ngFor="let section of sections" class="group flex flex-col items-center p-1.5 bg-slate-50/70 hover:bg-white rounded-xl transition-all duration-300 text-center border-2 border-transparent hover:border-sky-400 hover:shadow-md">
                                     <div class="w-8 h-8 mb-1 rounded-full flex items-center justify-center bg-gradient-to-br from-sky-100 to-sky-50 group-hover:scale-110 transition-transform">
@@ -257,7 +259,7 @@
                         </div>
                     </div>
 
-                    <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4">
+                    <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/60 p-2">
                         <h3 class="text-base font-bold text-slate-900 mb-2" title="Skills you have in addition to your job role."><b>Additional Skills</b></h3>
                         <div *ngIf="additionalSkills.length > 0; else noAdditionalSkills" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[190px] overflow-y-auto pr-1" [@listStagger]="additionalSkills.length">
                             <div *ngFor="let skill of additionalSkills" class="group flex flex-col items-center p-1.5 bg-slate-50/70 hover:bg-white rounded-xl transition-all duration-300 text-center border-2 border-transparent hover:border-sky-400 hover:shadow-md">
@@ -277,8 +279,8 @@
                         </ng-template>
                     </div>
                     
-                    <div class="space-y-4">
-                        <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4">
+                    <div class="space-y-2">
+                        <div @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/60 p-2">
                             <h3 class="text-base font-bold text-slate-900 mb-3"><b>Training Overview</b></h3>
                             <div class="grid grid-cols-3 gap-3 text-center">
                                 <button (click)="selectTab('trainingCatalog')" class="p-2 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-center">
@@ -298,7 +300,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div id="upcoming-trainings-section" @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-4">
+                        <div id="upcoming-trainings-section" @slideFadeIn class="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/60 p-2">
                             <h3 class="text-base font-bold text-slate-900 mb-2"><b>Upcoming Trainings</b></h3>
                             <div *ngIf="dashboardUpcomingTrainings.length > 0; else noAssignedTrainings" class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                                 <div *ngFor="let t of dashboardUpcomingTrainings | slice:0:4" class="flex items-center justify-between p-1.5 bg-slate-50/70 rounded-lg border border-slate-200/80 hover:bg-white transition-colors">
@@ -350,6 +352,10 @@
                             </div>
                 
                             <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-medium text-slate-600">Progress</span>
+                                    <span class="text-xs font-bold text-slate-700">{{ getSkillProgress(competency) }}%</span>
+                                </div>
                                 <div class="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden shadow-inner mb-1.5">
                                     <div class="h-full rounded-full transition-all duration-700" [ngClass]="{
                                         'bg-gradient-to-r from-green-400 to-emerald-500': competency.status === 'Met',
@@ -662,7 +668,13 @@
                 </div>
 
                 <div *ngIf="activeTab === 'myBadges'" @slideFadeIn>
-                    <h2 class="text-3xl font-bold mb-8 text-slate-800">My Badges & Achievements</h2>
+                    <div class="bg-blue-600 px-6 py-3 shadow-lg rounded-2xl mx-6 mt-4 mb-6">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 text-white">
+                                <h2 class="text-sm font-semibold">My Badges & Achievements</h2>
+                            </div>
+                        </div>
+                    </div>
                     <div *ngIf="badges.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8" [@listStagger]="badges.length">
                         <div *ngFor="let badge of badges"
                             class="group flex flex-col items-center text-center p-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
@@ -695,21 +707,22 @@
                 </div>
 
                 <div *ngIf="activeTab === 'levels'" @slideFadeIn>
-                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-                        <h2 class="text-3xl font-bold text-slate-800">Levels Definitions</h2>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="relative">
-                                <select [(ngModel)]="selectedSkill" (ngModelChange)="onSkillChange()"
-                                    class="w-full sm:w-64 appearance-none px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white/80 cursor-pointer pr-12">
-                                    <option value="">All Skills</option>
-                                    <option *ngFor="let section of sections" [value]="section.title">{{ section.title }}</option>
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                                    <i class="fa-solid fa-chevron-down text-slate-500 text-xs"></i>
-                                </div>
+                    <div class="bg-blue-600 px-6 py-3 shadow-lg rounded-2xl mx-6 mt-4 mb-6">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 text-white">
+                                <h2 class="text-sm font-semibold">Levels Definitions</h2>
                             </div>
-                            <input [(ngModel)]="levelsSearch" type="text" placeholder="Search levels, keywords..."
-                                class="w-full sm:w-80 px-4 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white/80" />
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <div class="relative">
+                                    <select [(ngModel)]="selectedSkill" (ngModelChange)="onSkillChange()"
+                                        class="w-full sm:w-48 appearance-none px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white cursor-pointer text-sm">
+                                        <option value="">All Skills</option>
+                                        <option *ngFor="let section of sections" [value]="section.title">{{ section.title }}</option>
+                                    </select>
+                                </div>
+                                <input [(ngModel)]="levelsSearch" type="text" placeholder="Search levels, keywords..."
+                                    class="w-full sm:w-64 px-3 py-1 rounded-md border border-slate-300 focus:ring-2 focus:ring-sky-500 outline-none bg-white text-sm" />
+                            </div>
                         </div>
                     </div>
                 
@@ -972,7 +985,7 @@
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
     <div @modalScale class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl m-4" (click)="$event.stopPropagation()">
         <div class="flex items-center justify-between p-6 bg-slate-50 rounded-t-2xl border-b border-slate-200">
-            <h3 class="text-xl font-bold text-slate-900">{{ modalTitle }} ({{ modalSkills.length > 0 ? modalSkills.length : (modalTitle === 'Skills Met' ? skillsMet : totalSkills) }})</h3>
+            <h3 class="text-xl font-bold text-slate-900">{{ modalTitle }} ({{ modalSkills.length }})</h3>
             <button (click)="closeSkillsModal()" class="w-9 h-9 text-slate-400 hover:text-red-600 hover:bg-red-100 rounded-full flex items-center justify-center transition-colors">
                 <i class="fa-solid fa-times text-lg"></i>
             </button>
@@ -984,7 +997,8 @@
                     [ngClass]="{
                            'border-t-4 border-green-500': competency.status === 'Met',
                            'border-t-4 border-orange-500': competency.status === 'Gap',
-                           'border-t-4 border-red-500': competency.status === 'Error'
+                           'border-t-4 border-red-500': competency.status === 'Error',
+                           'border-t-4 border-sky-500': !competency.status
                        }">
                     <div class="flex flex-col justify-between h-full">
                         <div class="flex items-start justify-between mb-4">
@@ -997,7 +1011,7 @@
                                     <span class="text-sm font-medium text-slate-500">{{ competency.competency || 'Skill' }}</span>
                                 </div>
                             </div>
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider" [ngClass]="{
+                            <span *ngIf="competency.status" class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider" [ngClass]="{
                                    'bg-green-100 text-green-800': competency.status === 'Met',
                                    'bg-orange-100 text-orange-800': competency.status === 'Gap',
                                    'bg-red-100 text-red-800': competency.status === 'Error'
@@ -1005,7 +1019,7 @@
                                 {{ competency.status }}
                             </span>
                         </div>
-                        <div class="space-y-4">
+                        <div class="space-y-4" *ngIf="competency.status">
                             <div class="flex justify-between items-center text-sm">
                                 <div class="flex items-center text-slate-600">
                                     <i class="fa-solid fa-bullseye text-slate-400 mr-2 w-4 text-center"></i>Current: <span
@@ -1015,6 +1029,10 @@
                                     <i class="fa-solid fa-rocket text-slate-400 mr-2 w-4 text-center"></i>Target: <span
                                         class="ml-1.5 font-semibold text-slate-900">{{ competency.target_expertise }}</span>
                                 </div>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-slate-600">Progress</span>
+                                <span class="text-sm font-bold text-slate-700">{{ getSkillProgress(competency) }}%</span>
                             </div>
                             <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden shadow-inner">
                                 <div class="h-full rounded-full transition-all duration-700" [ngClass]="{
@@ -1028,7 +1046,9 @@
                     </div>
                 </div>
             </div>
-            <p *ngIf="modalSkills.length === 0" class="text-center text-slate-500 py-8">No specific skill data to display. This modal shows skills assigned to you via the API.</p>
+            <p *ngIf="modalSkills.length === 0" class="text-center text-slate-500 py-8">
+                {{ modalTitle === 'Skills Met' ? 'No skills have been marked as "Met" yet.' : 'No core skills data available.' }}
+            </p>
         </div>
     </div>
 </div>
